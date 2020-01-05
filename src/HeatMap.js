@@ -81,6 +81,7 @@ function draw_heat_small() {
         .attr("width", width)       //设定宽度
         .attr("height", height)    //设定高度
         .style("margin-top", 10)
+        .style("margin-left", 10)
 
     svg.selectAll('.heat-map-rect').data(dataset)
         .enter().append('rect')
