@@ -1,0 +1,53 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>VAST-2017 MC2</title>
+</head>
+
+
+<h1
+    style="width: 1600;height: 60;text-align:center; font-size: 32; position: fixed; left: 0; top: 0;background: #ffffff;">
+    VAST-2017 MC2
+</h1>
+
+<body>
+    <script src="../d3/d3.min.js" charset="utf-8"></script>
+    <script src="../d3/colorbrewer.v1.min.js" charset="utf-8"></script>
+    <script src="../processed_data/data.js" charset="utf-8"></script>
+    <script src="./HeatMap.js" charset="utf-8"></script>
+    <div id="select" style="width: 750px;height: 100px; margin-top: 150px;margin-left: 25px;">
+        <h2>请选择选项</h2>
+        <form id="select" onchange="handle_change_selection()">
+            <label>传感器：</label>
+            <input name="sensor" value="1" type="radio" checked /><label>1</label>
+            <input name="sensor" value="2" type="radio" /><label>2</label>
+            <input name="sensor" value="3" type="radio" /><label>3</label>
+            <input name="sensor" value="4" type="radio" /><label>4</label>
+            <input name="sensor" value="5" type="radio" /><label>5</label>
+            <input name="sensor" value="6" type="radio" /><label>6</label>
+            <input name="sensor" value="7" type="radio" /><label>7</label>
+            <input name="sensor" value="8" type="radio" /><label>8</label>
+            <input name="sensor" value="9" type="radio" /><label>9</label>
+            <br>
+            <label>月份：</label>
+            <input name="month" value="4" type="radio" checked /><label>四月</label>
+            <input name="month" value="8" type="radio" /><label>八月</label>
+            <input name="month" value="12" type="radio" /><label>十二月</label>
+            <br>
+            <label>化学物质：</label>
+            <input name="chemical" value="Appluimonia" type="radio" checked /><label>Appluimonia</label>
+            <input name="chemical" value="Chlorodinine" type="radio" /><label>Chlorodinine</label>
+            <input name="chemical" value="Methylosmolene" type="radio" /><label>Methylosmolene</label>
+            <input name="chemical" value="AGOC-3A" type="radio" /><label>AGOC-3A</label>
+        </form>
+    </div>
+    <div style="width: 1500;height: 1600;margin-top: 75;margin-left: 25;">
+        <div id="heat" style="width: 750px;height: 750px;float: left">
+            <h2>热力图</h2>
+        </div>
+    </div>
+    <script>handle_change_selection();</script>
+</body>
+
+</html>
