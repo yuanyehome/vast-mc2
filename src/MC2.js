@@ -131,7 +131,11 @@ function draw_heat() {
                 return "draw_wind_dir(\"" + d.date + "\",\"" + d.hour + "\")";
             }
         })
-        .style("cursor", "pointer");
+        .style("cursor", "pointer")
+        .append("title")
+        .text(function (d, i) {
+            return "观测值: " + sensor_data[selected_sensor][selected_chemical][d.date][d.hour];
+        });
     svg.selectAll('row-label').data(month_to_days[selected_month]())
         .enter().append('text')
         .attr('x', 5)
@@ -519,7 +523,9 @@ function draw_wind_dir(date, hour) {
             .attr("cx", sensor_loc[i][0] * 5)
             .attr("cy", height - sensor_loc[i][1] * 5 - 100)
             .attr("r", 5)
-            .style("fill", "#2E9AFE");
+            .style("fill", "#2E9AFE")
+            .append("title")
+            .text("观测值" + sensor_data[(i + 1).toString()][selected_chemical][date][hour]);
         svg.append("text")
             .attr("x", sensor_loc[i][0] * 5 - 25)
             .attr("y", height - sensor_loc[i][1] * 5 - 100 + 5)
@@ -533,7 +539,9 @@ function draw_wind_dir(date, hour) {
             .attr("y", height - fac_loc[fac][1] * 5 - 105)
             .attr("width", 10)
             .attr("height", 10)
-            .style("fill", "#FF8000");
+            .style("fill", "#FF8000")
+            .append("title")
+            .text(fac);
         svg.append("text")
             .attr("x", fac_loc[fac][0] * 5 - 5)
             .attr("y", height - fac_loc[fac][1] * 5 - 80)
