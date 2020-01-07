@@ -1,26 +1,49 @@
-var selected_sensor = undefined
-var selected_month = undefined
-var selected_chemical = undefined
-var init = 1
-var max_value_map = {}
+var selected_sensor = undefined;
+var selected_month = undefined;
+var selected_chemical = undefined;
+var selected_fac = undefined;
+var init = 1;
+var max_value_map = {};
+var fac_sensor_map = {};
 
-const month_key_map = { 4: '2016-04', 8: '2016-08', 12: '2016-12' }
+const month_key_map = { 4: '2016-04', 8: '2016-08', 12: '2016-12' };
 const all_hours = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-    '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
+    '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
 const month_to_days = {
     4: function () { var tmp = []; for (var i = 1; i <= 30; ++i) tmp.push(i); return tmp; },
     8: function () { var tmp = []; for (var i = 1; i <= 31; ++i) tmp.push(i); return tmp; },
     12: function () { var tmp = []; for (var i = 1; i <= 31; ++i) tmp.push(i); return tmp; }
+};
+const month_num_days = {
+    4: 30,
+    8: 31,
+    12: 31
 }
-const chemicals = ["Appluimonia", "Chlorodinine", "Methylosmolene", "AGOC-3A"]
+const chemicals = ["Appluimonia", "Chlorodinine", "Methylosmolene", "AGOC-3A"];
 const color_range_map = {
     "Appluimonia": colorbrewer.YlOrRd[5]
     , "Chlorodinine": colorbrewer.Purples[5],
     "Methylosmolene": colorbrewer.Blues[5],
     "AGOC-3A": colorbrewer.Greens[5]
-}
+};
+const sensor_loc = [
+    [62, 21], [66, 35], [76, 41], [88, 45],
+    [103, 43], [102, 22], [89, 3], [74, 7], [119, 42]
+];
+const fac_loc = {
+    "Roadrunner Fitness Electronics": [89, 27],
+    "Kasios Office Furniture": [90, 21],
+    "Radiance ColourTek": [109, 26],
+    "Indigo Sol Boards": [120, 22]
+};
+const fac_colors = {
+    "Roadrunner Fitness Electronics": "blue",
+    "Kasios Office Furniture": "green",
+    "Radiance ColourTek": "purple",
+    "Indigo Sol Boards": "red"
+};
 
-function draw_heat_small() {
+function draw_heat() {
     if (init == 0) {
         d3.select("#heat").select("svg").remove();
     }
@@ -153,10 +176,264 @@ function init_max_value_map() {
     console.log(max_value_map);
 }
 
+function calc_value(theta, speed) {
+    return Math.exp(0.5 * speed * Math.cos(theta));
+    // [TODO] 尝试不同的模型
+}
+
+function calc_by_id(dir, speed, fac) {
+    fac_sensor_dir = fac_sensor_map[selected_sensor][fac]
+}
+
+function calc_dir(loc1, loc2) {
+    // calculate the direction from loc1 to loc2
+    dir_loc = [loc2[0] - loc1[0], loc2[1] - loc1[1]];
+    theta = Math.atan(dir_loc[1] / dir_loc[0]);
+    if (dir_loc[0] < 0) theta = theta + Math.PI;
+    if (theta < 0) theta = theta + 2 * Math.PI;
+    theta = Math.PI / 2 - theta;
+    if (theta < 0) theta = theta + 2 * Math.PI;
+    // console.log(theta / Math.PI * 180);
+    return theta;
+}
+
+function init_fac_sensor_map() {
+    for (var i = 1; i <= 9; ++i) {
+        fac_sensor_map[i] = {};
+        var this_sensor_loc = sensor_loc[i - 1];
+        for (fac in fac_loc) {
+            // console.log("init  " + i.toString() + "  " + fac)
+            fac_sensor_map[i][fac] = calc_dir(fac_loc[fac], this_sensor_loc);
+        }
+    }
+}
+
+function draw_dir_curve() {
+    var width = 1860;
+    var height = 200;
+    var padding = { "left": 50, "right": 10, "top": 20, "bottom": 20 };
+    var dataset = {};
+    var all_dataset = [];
+    // for (each_year in all_data) {
+    //     if (selected_year != "all" && each_year.toString() != selected_year) {
+    //         console.log("not me");
+    //         continue;
+    //     }
+    //     all_days = all_data[each_year];
+    //     for (each_day in all_days) {
+    //         if (cnt % (selected_year == "all" ? 20 : 5) == 0) {
+    //             for (var i = 0; i < cities.length; i++) {
+    //                 dataset[i].push({ 'x': cnt, 'y': all_days[each_day][selected_type][i] });
+    //                 all_dataset.push({ 'x': cnt, 'y': all_days[each_day][selected_type][i] });
+    //             }
+    //         }
+    //         cnt++;
+    //     }
+    // }
+    // console.log(cnt);
+    // console.log(dataset[0].length)
+    for (fac in fac_loc) {
+        var cnt = 0;
+        console.log("processing  " + selected_sensor.toString() + "  " + fac)
+        dataset[fac] = [];
+        var addcnt_flag = false;
+        for (each_day in wind_data) {
+            if (parseInt(each_day.substr(5, 2)) != selected_month) {
+                this_day = wind_data[each_day];
+                for (each_hour in this_day) {
+                    this_data = this_day[each_hour];
+                    this_dir = this_data["direction"] / 180 * Math.PI;
+                    theta = Math.abs(this_dir - fac_sensor_map[selected_sensor][fac])
+                    if (theta > Math.PI) theta = 2 * Math.PI - theta;
+                    this_value = calc_value(theta, this_data["speed"]);
+                    all_dataset.push(this_value);
+                }
+                continue;
+            }
+            if (!addcnt_flag && selected_month == 8) {
+                cnt += 24;
+                addcnt_flag = true;
+            }
+            this_day = wind_data[each_day];
+            var last_hour = -3;
+            for (each_hour in this_day) {
+                var int_hour = parseInt(each_hour);
+                if (int_hour - last_hour != 3) {
+                    cnt += parseInt((int_hour - last_hour) / 3) - 1;
+                }
+                this_data = this_day[each_hour];
+                this_dir = this_data["direction"] / 180 * Math.PI;
+                theta = Math.abs(this_dir - fac_sensor_map[selected_sensor][fac])
+                if (theta > Math.PI) theta = 2 * Math.PI - theta;
+                this_value = calc_value(theta, this_data["speed"]);
+                dataset[fac].push({ 'x': cnt, 'y': this_value });
+                all_dataset.push(this_value);
+                cnt++;
+                last_hour = int_hour;
+            }
+        }
+    }
+    console.log(cnt);
+    // console.log(dataset["Roadrunner Fitness Electronics"].length);
+    // console.log(all_dataset.length);
+    if (init == 0) {
+        d3.select("#curve").selectAll("#dir-svg").remove();
+    }
+    var dir_svg = d3.select("#curve")
+        .append("svg")          //添加一个svg元素
+        .attr("width", width)       //设定宽度
+        .attr("height", height)    //设定高度
+        .style("margin-top", 10)
+        .attr("id", "dir-svg");
+    //    .style("background-color", "#000000");
+    var xScale = d3.scaleLinear()
+        .domain(d3.extent(dataset[selected_fac], function (d) {
+            return d.x;
+        }))
+        .range([0, width - padding.left - padding.right]);
+    var yScale = d3.scaleLinear()
+        .domain([0, d3.max(all_dataset, function (d) {
+            return d;
+        })])
+        .range([height - padding.top - padding.bottom, 0]);
+    var xAxis = d3.axisBottom(xScale).ticks(0);
+    var yAxis = d3.axisLeft(yScale).ticks(8);
+    dir_svg.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(' + padding.left + ',' + (height - padding.bottom) + ')')
+        .call(xAxis);
+    dir_svg.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(' + padding.left + ',' + padding.top + ')')
+        .call(yAxis);
+    dir_svg.append("text")
+        .text("sensor: " + selected_sensor.toString())
+        .attr("text-anchor", "begin")
+        .attr("dy", 12)
+        .attr("dx", 40);
+    var line = d3.line()
+        .x(function (d) {
+            return xScale(d.x)
+        })
+        .y(function (d) {
+            return yScale(d.y);
+        })
+        .curve(d3.curveMonotoneX)
+    for (fac in fac_loc) {
+        if (fac == selected_fac) {
+            dir_svg.append('path')
+                .attr('class', 'line')
+                .attr('stroke', fac_colors[fac])
+                .attr('stroke-width', '3px')
+                .attr('fill', 'none')
+                .attr('transform', 'translate(' + padding.left + ',' + padding.top + ')')
+                .attr('d', line(dataset[fac]));
+        }
+    }
+    for (var i = 0; i < month_num_days[selected_month]; ++i) {
+        dir_svg.append("text")
+            .text(i + 1)
+            .attr("x", padding.left + i * 1800 / month_num_days[selected_month])
+            .attr("y", 10 + height - padding.bottom)
+            .attr("font-size", 10);
+    }
+}
+
+function draw_read_curve() {
+    var read_data = sensor_data[selected_sensor][selected_chemical];
+    var width = 1860;
+    var height = 200;
+    var padding = { "left": 50, "right": 10, "top": 20, "bottom": 20 };
+    var dataset = [];
+    var all_dataset = [];
+    var cnt = 0;
+    console.log("processing  " + selected_sensor.toString() + "  " + fac)
+    var addcnt_flag = false;
+    for (each_day in read_data) {
+        this_day = read_data[each_day];
+        if (parseInt(each_day.substr(5, 2)) != selected_month) {
+            for (each_hour in this_day) {
+                this_data = this_day[each_hour];
+                all_dataset.push(this_data);
+            }
+            continue;
+        }
+        var last_hour = -1;
+        for (each_hour in this_day) {
+            var int_hour = parseInt(each_hour);
+            cnt += int_hour - last_hour - 1;
+            this_data = this_day[each_hour];
+            dataset.push({ 'x': cnt, 'y': this_data });
+            all_dataset.push(this_data);
+            cnt++;
+            last_hour = int_hour;
+        }
+    }
+    console.log(cnt);
+    if (init == 0) {
+        d3.select("#curve").selectAll("#read-svg").remove();
+    }
+    var read_svg = d3.select("#curve")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .style("margin-top", 10)
+        .attr("id", "read-svg");
+    //  .style("background-color", "#000000");
+    var xScale = d3.scaleLinear()
+        .domain(d3.extent(dataset, function (d) {
+            return d.x;
+        }))
+        .range([0, width - padding.left - padding.right]);
+    var yScale = d3.scaleLinear()
+        .domain([0, d3.max(all_dataset, function (d) {
+            return d;
+        })])
+        .range([height - padding.top - padding.bottom, 0]);
+    var xAxis = d3.axisBottom(xScale).ticks(0);
+    var yAxis = d3.axisLeft(yScale).ticks(8);
+    read_svg.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(' + padding.left + ',' + (height - padding.bottom) + ')')
+        .call(xAxis);
+    read_svg.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(' + padding.left + ',' + padding.top + ')')
+        .call(yAxis);
+    read_svg.append("text")
+        .text("sensor: " + selected_sensor.toString() + " && " + "chemical: " + selected_chemical)
+        .attr("text-anchor", "begin")
+        .attr("dy", 12)
+        .attr("dx", 40);
+    var line = d3.line()
+        .x(function (d) {
+            return xScale(d.x)
+        })
+        .y(function (d) {
+            return yScale(d.y);
+        })
+        .curve(d3.curveMonotoneX)
+    read_svg.append('path')
+        .attr('class', 'line')
+        .attr('stroke', "black")
+        .attr('stroke-width', '3px')
+        .attr('fill', 'none')
+        .attr('transform', 'translate(' + padding.left + ',' + padding.top + ')')
+        .attr('d', line(dataset));
+    for (var i = 0; i < month_num_days[selected_month]; ++i) {
+        read_svg.append("text")
+            .text(i + 1)
+            .attr("x", padding.left + i * 1800 / month_num_days[selected_month])
+            .attr("y", 10 + height - padding.bottom)
+            .attr("font-size", 10);
+    }
+}
+
 function handle_change_selection() {
     var obj_sensor = document.getElementsByName("sensor");
     var obj_month = document.getElementsByName("month");
     var obj_chemical = document.getElementsByName("chemical");
+    var obj_fac = document.getElementsByName("fac");
     for (var i = 0; i < obj_sensor.length; i++) {
         if (obj_sensor[i].checked) {
             selected_sensor = obj_sensor[i].value;
@@ -175,8 +452,17 @@ function handle_change_selection() {
             console.log(selected_chemical);
         }
     }
+    for (var i = 0; i < obj_fac.length; i++) {
+        if (obj_fac[i].checked) {
+            selected_fac = obj_fac[i].value;
+            console.log(selected_fac);
+        }
+    }
     init_max_value_map();
-    draw_heat_small();
+    draw_heat();
+    init_fac_sensor_map();
+    draw_dir_curve();
+    draw_read_curve();
     if (init == 1) {
         init = 0;
     }

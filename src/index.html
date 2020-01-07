@@ -52,10 +52,18 @@
             风向图
         </h2>
     </div>
-    <div id="curve" style="width: 1600;height: 1600;float: left;margin-left: 25px; margin-top: 50;">
+    <div id="curve" style="width: 1850;height: 1600;float: left;margin-left: 25px; margin-top: 50;">
         <h2>
             折线图
         </h2>
+        <form id="select" onchange="handle_change_selection()" style="margin-left: 10;">
+            <label>请选择工厂：</label>
+            <input name="fac" value="Roadrunner Fitness Electronics" type="radio" checked /><label>Roadrunner Fitness
+                Electronics</label>
+            <input name="fac" value="Kasios Office Furniture" type="radio" /><label>Kasios Office Furniture</label>
+            <input name="fac" value="Radiance ColourTek" type="radio" /><label>Radiance ColourTek</label>
+            <input name="fac" value="Indigo Sol Boards" type="radio" /><label>Indigo Sol Boards</label>
+        </form>
     </div>
     <script>handle_change_selection();</script>
 </body>
