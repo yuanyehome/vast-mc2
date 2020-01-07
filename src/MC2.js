@@ -43,6 +43,7 @@ const fac_colors = {
     "Indigo Sol Boards": "red"
 };
 
+
 function draw_heat() {
     if (init == 0) {
         d3.select("#heat").select("svg").remove();
@@ -88,7 +89,7 @@ function draw_heat() {
             }
         }
     }
-    console.log(dataset)
+    // console.log(dataset)
     var x_scale = d3.scaleLinear()
         .domain([0, 24])
         .range([0, width - padding.left - padding.right]);
@@ -124,6 +125,13 @@ function draw_heat() {
                 return color_scale(d.value);
             }
         })
+        .attr("onclick", function (d, i) {
+            if (d.is_empty) return "";
+            else {
+                return "draw_wind_dir(\"" + d.date + "\",\"" + d.hour + "\")";
+            }
+        })
+        .style("cursor", "pointer");
     svg.selectAll('row-label').data(month_to_days[selected_month]())
         .enter().append('text')
         .attr('x', 5)
@@ -426,6 +434,115 @@ function draw_read_curve() {
             .attr("x", padding.left + i * 1800 / month_num_days[selected_month])
             .attr("y", 10 + height - padding.bottom)
             .attr("font-size", 10);
+    }
+}
+
+function draw_wind_dir(date, hour) {
+    console.log([date, hour]);
+
+
+    // var obs = {};
+    // var obs_arr = [];
+    // for (key in sensor_data) {
+    //     obs[key] = sensor_data[key][selected_chemical][date][hour];
+    //     obs_arr.push(obs[key]);
+    // }
+    // let thresholds = d3.ticks(d3.min(obs_arr), d3.max(obs_arr), 5);
+    // let color = d3.scaleSequential(d3.interpolateMagma)
+    //     .domain(d3.extent(thresholds));
+    // let contours = d3.contours()
+    //     .size([500, 500])
+    //     .thresholds(thresholds)
+    //     (obs_arr);
+    // console.log(obs_arr)
+    // console.log(contours)
+
+    var width = 900;
+    var height = 500;
+    d3.select("#wind").selectAll("svg").remove();
+    var svg = d3.select("#wind").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .style("margin-top", 10);
+    //    .style("background-color", "#000000");
+
+    // svg.append("g").selectAll(".contour")
+    //     .data(contours)
+    //     .enter().append("path")
+    //     .attr("class", "contour")
+    //     .attr("d", d3.geoPath())
+    //     .attr("stroke", function (d) { return color(d.value); })
+    //     .attr("stroke-width", 5)
+    //     .attr("fill", "none");
+
+
+    svg.append("text")
+        .attr("x", 0)
+        .attr("y", 50)
+        .text("Time: " + date + "  " + hour + ": 00 && Chemical: " + selected_chemical)
+        .attr("font-size", "24");
+    if (wind_data[date] != undefined && wind_data[date][hour] != undefined) {
+        var this_data = wind_data[date][hour];
+        var arrow_path = "M2,2 L10,6 L2,10 L6,6 L2,2";
+        var defs = svg.append("defs");
+        //添加marker标签及其属性
+        var arrowMarker = defs.append("marker")
+            .attr("id", "arrow")
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("markerWidth", 30)
+            .attr("markerHeight", 30)
+            .attr("viewBox", "0 0 12 12")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("orient", "auto")
+        arrowMarker.append("path")
+            .attr("d", arrow_path)
+            .attr("fill", "#C0C0C0")
+        //绘制直线
+        var theta = this_data["direction"] / 180 * Math.PI;
+        for (var i = 0; i < 9; ++i) {
+            for (var j = 1; j < 5; ++j) {
+                svg.append("line")
+                    .attr("x1", 50 + i * 100)
+                    .attr("y1", 50 + j * 100)
+                    .attr("x2", 50 + i * 100 + 20 * Math.cos(Math.PI / 2 - theta))
+                    .attr("y2", 50 + j * 100 - 20 * Math.sin(Math.PI / 2 - theta))
+                    .attr("stroke", "#C0C0C0")
+                    .attr("stroke-width", 5)
+                    .attr("marker-end", "url(#arrow)");
+            }
+        }
+    }
+    // 扩大五倍，向上平移100
+    for (var i = 0; i < 9; ++i) {
+        svg.append("circle")
+            .attr("cx", sensor_loc[i][0] * 5)
+            .attr("cy", height - sensor_loc[i][1] * 5 - 100)
+            .attr("r", 5)
+            .style("fill", "#2E9AFE");
+        svg.append("text")
+            .attr("x", sensor_loc[i][0] * 5 - 25)
+            .attr("y", height - sensor_loc[i][1] * 5 - 100 + 5)
+            .text("S" + (i + 1).toString());
+    }
+    var i = 0;
+    for (fac in fac_loc) {
+        ++i;
+        svg.append("rect")
+            .attr("x", fac_loc[fac][0] * 5 - 5)
+            .attr("y", height - fac_loc[fac][1] * 5 - 105)
+            .attr("width", 10)
+            .attr("height", 10)
+            .style("fill", "#FF8000");
+        svg.append("text")
+            .attr("x", fac_loc[fac][0] * 5 - 5)
+            .attr("y", height - fac_loc[fac][1] * 5 - 80)
+            .text("F" + i.toString());
+        svg.append("text")
+            .attr("x", 700)
+            .attr("y", 30 * i)
+            .text("F" + i.toString() + ": " + fac)
+            .attr("font-size", "14");
     }
 }
 
