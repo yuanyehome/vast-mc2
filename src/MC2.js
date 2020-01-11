@@ -254,8 +254,8 @@ function draw_dir_curve() {
                 this_day = wind_data[each_day];
                 for (each_hour in this_day) {
                     this_data = this_day[each_hour];
-                    this_dir = this_data["direction"] / 180 * Math.PI;
-                    theta = Math.abs(this_dir - fac_sensor_map[selected_sensor][fac])
+                    this_dir = this_data["direction"] / 180 * Math.PI + Math.PI;
+                    theta = Math.abs(this_dir - fac_sensor_map[selected_sensor][fac]);
                     if (theta > Math.PI) theta = 2 * Math.PI - theta;
                     this_value = calc_value(theta, this_data["speed"]);
                     all_dataset.push(this_value);
@@ -274,7 +274,7 @@ function draw_dir_curve() {
                     cnt += parseInt((int_hour - last_hour) / 3) - 1;
                 }
                 this_data = this_day[each_hour];
-                this_dir = this_data["direction"] / 180 * Math.PI;
+                this_dir = this_data["direction"] / 180 * Math.PI + Math.PI;
                 theta = Math.abs(this_dir - fac_sensor_map[selected_sensor][fac])
                 if (theta > Math.PI) theta = 2 * Math.PI - theta;
                 this_value = calc_value(theta, this_data["speed"]);
@@ -503,7 +503,7 @@ function draw_wind_dir(date, hour) {
             .attr("d", arrow_path)
             .attr("fill", "#C0C0C0")
         //绘制直线
-        var theta = this_data["direction"] / 180 * Math.PI;
+        var theta = this_data["direction"] / 180 * Math.PI + Math.PI;
         for (var i = 0; i < 9; ++i) {
             for (var j = 1; j < 5; ++j) {
                 svg.append("line")
